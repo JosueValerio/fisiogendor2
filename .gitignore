@@ -1,8 +1,26 @@
+# dependencies
 node_modules/
+
+# Next.js
+.next/
+out/
 build/
 dist/
-coverage/
-.DS_Store
+
+# environment
+.env
+.env.local
+.env.production
+!.env.local.example
+
+# debug
 *.log
-.env*
-!.env.example
+npm-debug.log*
+
+# misc
+.DS_Store
+coverage/
+.turbo/
+
+# Supabase
+supabase/.temp/
