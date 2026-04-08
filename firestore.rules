@@ -1,0 +1,151 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: patients
+    // Document ID: {patientId}
+    // Fields:
+    //   - name: string (required, 1-100 chars)
+    //   - email: string (optional, email format)
+    //   - phone: string (required)
+    //   - status: string (optional)
+    //   - recoveryProgress: number (0-100)
+    //   - clinicalHistory: string (optional)
+    //   - createdAt: timestamp
+    //   - updatedAt: timestamp
+    //   - ownerUid: string (required, matches auth.uid)
+    //
+    // Collection: appointments
+    // Document ID: {appointmentId}
+    // Fields:
+    //   - patientId: string (required)
+    //   - patientName: string
+    //   - date: timestamp (required)
+    //   - type: string
+    //   - status: string (scheduled, completed, cancelled)
+    //   - ownerUid: string (required, matches auth.uid)
+    //
+    // Collection: ai_interactions
+    // Document ID: {interactionId}
+    // Fields:
+    //   - patientId: string
+    //   - patientName: string
+    //   - message: string (required)
+    //   - response: string (required)
+    //   - type: string (booking, faq, reminder)
+    //   - timestamp: timestamp (required)
+    //   - ownerUid: string (required, matches auth.uid)
+    //
+    // Collection: settings
+    // Document ID: {ownerUid}
+    // Fields:
+    //   - clinicName: string
+    //   - aiTone: string (Empathetic, Casual, Formal)
+    //   - operatingHours: string
+    //   - specificInstructions: string
+    //   - ownerUid: string (required, matches auth.uid)
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isDocOwner() {
+      return isAuthenticated() && request.auth.uid == resource.data.ownerUid;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && 
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+         (request.auth.token.email == "josuevalerio515@gmail.com" && request.auth.token.email_verified == true));
+    }
+
+    function isValidEmail(email) {
+      return email is string && email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    // ===============================================================
+    // Domain Validators
+    // ===============================================================
+
+    function isValidPatient(data) {
+      return data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
+             data.phone is string && data.phone.size() > 0 &&
+             (!('email' in data) || isValidEmail(data.email)) &&
+             (!('recoveryProgress' in data) || (data.recoveryProgress is number && data.recoveryProgress >= 0 && data.recoveryProgress <= 100)) &&
+             data.ownerUid == request.auth.uid;
+    }
+
+    function isValidAppointment(data) {
+      return data.patientId is string &&
+             data.date is timestamp &&
+             data.status in ['scheduled', 'completed', 'cancelled'] &&
+             data.ownerUid == request.auth.uid;
+    }
+
+    function isValidAIInteraction(data) {
+      return data.message is string && data.message.size() > 0 &&
+             data.response is string && data.response.size() > 0 &&
+             data.timestamp is timestamp &&
+             data.ownerUid == request.auth.uid;
+    }
+
+    function isValidSettings(data) {
+      return data.ownerUid == request.auth.uid &&
+             (!('aiTone' in data) || data.aiTone in ['Empathetic', 'Casual', 'Formal']);
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /patients/{patientId} {
+      allow read: if isDocOwner() || isAdmin();
+      allow create: if isAuthenticated() && isValidPatient(request.resource.data);
+      allow update: if isDocOwner() && isValidPatient(request.resource.data);
+      allow delete: if isDocOwner() || isAdmin();
+    }
+
+    match /appointments/{appointmentId} {
+      allow read: if isDocOwner() || isAdmin();
+      allow create: if isAuthenticated() && isValidAppointment(request.resource.data);
+      allow update: if isDocOwner() && isValidAppointment(request.resource.data);
+      allow delete: if isDocOwner() || isAdmin();
+    }
+
+    match /ai_interactions/{interactionId} {
+      allow read: if isDocOwner() || isAdmin();
+      allow create: if isAuthenticated() && isValidAIInteraction(request.resource.data);
+      allow update: if isDocOwner() && isValidAIInteraction(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    match /settings/{ownerUid} {
+      allow read: if isOwner(ownerUid) || isAdmin();
+      allow create: if isOwner(ownerUid) && isValidSettings(request.resource.data);
+      allow update: if isOwner(ownerUid) && isValidSettings(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    // Default deny
+    match /{path=**} {
+      allow read, write: if false;
+    }
+  }
+}

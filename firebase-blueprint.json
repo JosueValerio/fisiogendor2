@@ -1,0 +1,81 @@
+{
+  "entities": {
+    "Patient": {
+      "title": "Patient",
+      "description": "A patient registered in the clinic.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "Full name of the patient." },
+        "email": { "type": "string", "format": "email", "description": "Email address." },
+        "phone": { "type": "string", "description": "WhatsApp phone number." },
+        "status": { "type": "string", "description": "Clinical status (e.g., Post-Op, Chronic Pain)." },
+        "recoveryProgress": { "type": "number", "description": "Percentage of recovery (0-100)." },
+        "clinicalHistory": { "type": "string", "description": "Brief clinical history." },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" },
+        "ownerUid": { "type": "string", "description": "UID of the physiotherapist who owns this record." }
+      },
+      "required": ["name", "phone", "ownerUid"]
+    },
+    "Appointment": {
+      "title": "Appointment",
+      "description": "A scheduled session for a patient.",
+      "type": "object",
+      "properties": {
+        "patientId": { "type": "string", "description": "ID of the patient." },
+        "patientName": { "type": "string" },
+        "date": { "type": "string", "format": "date-time" },
+        "type": { "type": "string", "description": "Type of session (e.g., Evaluation, Treatment)." },
+        "status": { "type": "string", "enum": ["scheduled", "completed", "cancelled"] },
+        "ownerUid": { "type": "string" }
+      },
+      "required": ["patientId", "date", "status", "ownerUid"]
+    },
+    "AIInteraction": {
+      "title": "AI Interaction",
+      "description": "A log of an interaction between the AI and a patient.",
+      "type": "object",
+      "properties": {
+        "patientId": { "type": "string" },
+        "patientName": { "type": "string" },
+        "message": { "type": "string" },
+        "response": { "type": "string" },
+        "type": { "type": "string", "enum": ["booking", "faq", "reminder"] },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "ownerUid": { "type": "string" }
+      },
+      "required": ["message", "response", "timestamp", "ownerUid"]
+    },
+    "ClinicSettings": {
+      "title": "Clinic Settings",
+      "description": "Configuration for the clinic and AI behavior.",
+      "type": "object",
+      "properties": {
+        "clinicName": { "type": "string" },
+        "aiTone": { "type": "string", "enum": ["Empathetic", "Casual", "Formal"] },
+        "operatingHours": { "type": "string" },
+        "specificInstructions": { "type": "string" },
+        "ownerUid": { "type": "string" }
+      },
+      "required": ["ownerUid"]
+    }
+  },
+  "firestore": {
+    "/patients/{patientId}": {
+      "schema": "Patient",
+      "description": "Collection of patients."
+    },
+    "/appointments/{appointmentId}": {
+      "schema": "Appointment",
+      "description": "Collection of appointments."
+    },
+    "/ai_interactions/{interactionId}": {
+      "schema": "AIInteraction",
+      "description": "Log of AI interactions."
+    },
+    "/settings/{ownerUid}": {
+      "schema": "ClinicSettings",
+      "description": "Clinic-specific settings."
+    }
+  }
+}
