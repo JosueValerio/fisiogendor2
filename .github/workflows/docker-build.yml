@@ -43,7 +43,10 @@ jobs:
       - name: Log in to GHCR
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
 
-      - name: Build Docker image
+      - name: Build and push Docker image
+        env:
+          IMAGE: ghcr.io/josuevalerio/fisiogendor2
+          SHA: ${{ github.sha }}
         run: |
           docker build \
             --progress=plain \
@@ -51,11 +54,8 @@ jobs:
             --build-arg NEXT_PUBLIC_SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNwYWlqa21qb3B2Y3F1ZGZzd3hzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU2MDYwNTEsImV4cCI6MjA5MTE4MjA1MX0.R-ZZSdsCY7lrEKDCp2Cg-nSlzgD58lLLz6l3joburNY" \
             --build-arg NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY="pk_test_51TJYJDAnqCx18ZdWFztvB9pWWiaaSoadcZ8bXiPH87PmMPskls1Rz3cjcbTdvm43v4Z5XeSJrxIujIrvjti3vEuY00lQ27rjpI" \
             --build-arg NEXT_PUBLIC_APP_URL="https://www.fisiogendor.com" \
-            -t ghcr.io/${{ github.repository_owner }}/fisiogendor2:latest \
-            -t ghcr.io/${{ github.repository_owner }}/fisiogendor2:${{ github.sha }} \
+            -t "${IMAGE}:latest" \
+            -t "${IMAGE}:${SHA}" \
             .
-
-      - name: Push Docker image
-        run: |
-          docker push ghcr.io/${{ github.repository_owner }}/fisiogendor2:latest
-          docker push ghcr.io/${{ github.repository_owner }}/fisiogendor2:${{ github.sha }}
+          docker push "${IMAGE}:latest"
+          docker push "${IMAGE}:${SHA}"
