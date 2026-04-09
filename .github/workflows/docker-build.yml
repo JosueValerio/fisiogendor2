@@ -6,7 +6,33 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-and-push:
+  # Job 1: verifica se o Next.js build passa no Ubuntu antes de tentar Docker
+  test-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Next.js build test
+        run: npm run build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: https://spaijkmjopvcqudfswxs.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNwYWlqa21qb3B2Y3F1ZGZzd3hzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU2MDYwNTEsImV4cCI6MjA5MTE4MjA1MX0.R-ZZSdsCY7lrEKDCp2Cg-nSlzgD58lLLz6l3joburNY
+          NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: pk_test_51TJYJDAnqCx18ZdWFztvB9pWWiaaSoadcZ8bXiPH87PmMPskls1Rz3cjcbTdvm43v4Z5XeSJrxIujIrvjti3vEuY00lQ27rjpI
+          NEXT_PUBLIC_APP_URL: https://www.fisiogendor.com
+
+  # Job 2: build Docker e push para GHCR (só roda se Job 1 passar)
+  docker-push:
+    needs: test-build
     runs-on: ubuntu-latest
     permissions:
       contents: read
