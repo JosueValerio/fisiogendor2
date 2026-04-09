@@ -1,11 +1,11 @@
-# Stage 1: deps — node:22-slim (Debian) evita problemas com native modules no Alpine
-FROM node:22-slim AS deps
+# Stage 1: deps — node:24-slim (Debian) evita problemas com native modules no Alpine
+FROM node:24-slim AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
 
 # Stage 2: build
-FROM node:22-slim AS builder
+FROM node:24-slim AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
@@ -28,12 +28,12 @@ RUN npm run build
 RUN npx esbuild worker/index.ts \
       --bundle \
       --platform=node \
-      --target=node22 \
+      --target=node24 \
       --tsconfig=tsconfig.json \
       --outfile=worker-bundle.js
 
 # Stage 3: runner — imagem mínima de produção
-FROM node:22-slim AS runner
+FROM node:24-slim AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
