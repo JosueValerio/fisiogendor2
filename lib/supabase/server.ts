@@ -1,4 +1,5 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
+import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 
 // Usado em Server Components, Route Handlers e Server Actions
@@ -24,6 +25,15 @@ export async function createClient() {
         },
       },
     }
+  )
+}
+
+// Client sem cookies — para webhooks e callbacks onde não há sessão de usuário
+// NUNCA expor ao cliente; usa service role key
+export function createHeadlessAdminClient() {
+  return createSupabaseClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
 }
 

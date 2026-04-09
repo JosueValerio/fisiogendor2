@@ -62,9 +62,16 @@ export interface AgentSettings {
   trigger_keywords: string[]
   whatsapp_instance_id: string | null
   google_calendar_id: string | null
-  google_tokens: Record<string, unknown> | null
+  ai_enabled: boolean
+  google_tokens: string | null
   created_at: string
   updated_at: string
+}
+
+export interface GoogleTokens {
+  access_token: string
+  refresh_token: string
+  expiry_date: number // unix ms
 }
 
 export interface AIResponse {
@@ -72,4 +79,5 @@ export interface AIResponse {
   date: string | null
   time: string | null
   patientName: string | null
+  confidence: number
 }

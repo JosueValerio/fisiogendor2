@@ -31,6 +31,8 @@ export async function middleware(request: NextRequest) {
   const isAuthRoute = request.nextUrl.pathname.startsWith('/login')
   const isPublicRoute =
     request.nextUrl.pathname.startsWith('/auth') ||
+    request.nextUrl.pathname.startsWith('/api/whatsapp/webhook') ||
+    request.nextUrl.pathname.startsWith('/api/calendar/callback') ||
     request.nextUrl.pathname.startsWith('/_next') ||
     request.nextUrl.pathname.startsWith('/favicon')
 
