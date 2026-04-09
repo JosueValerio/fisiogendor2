@@ -1,9 +1,15 @@
 import { verifyWebhookSignature } from '@/lib/evolutionApi'
 import { createHeadlessAdminClient } from '@/lib/supabase/server'
 import { getRedisClient } from '@/lib/redis'
-import { NextResponse } from 'next/server'
+import { checkRateLimit } from '@/lib/rateLimit'
+import { NextResponse, type NextRequest } from 'next/server'
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
+  // Rate limit: 100 req/min por IP (retorna 200 para não expor a scanners)
+  const ip = request.headers.get('x-forwarded-for')?.split(',')[0].trim() ?? 'unknown'
+  const allowed = await checkRateLimit(`rl:webhook:${ip}`, 100, 60)
+  if (!allowed) return NextResponse.json({ ok: true })
+
   const rawBody = await request.text()
   const signature = request.headers.get('x-hub-signature-256')
 

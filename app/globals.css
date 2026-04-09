@@ -14,9 +14,9 @@
   --color-secondary: #FF734C;
   --color-on-surface-variant: #ADAAAA;
 
-  --radius-lg: 1rem;
-  --radius-xl: 2rem;
-  --radius-2xl: 3rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 1rem;
+  --radius-2xl: 1.5rem;
 }
 
 @layer base {

@@ -25,8 +25,16 @@ export async function PATCH(request: Request) {
   const body = await request.json()
   // Apenas clinic_name e phone são editáveis pelo usuário
   const updates: Record<string, unknown> = {}
-  if ('clinic_name' in body) updates.clinic_name = body.clinic_name
-  if ('phone' in body) updates.phone = body.phone
+  if ('clinic_name' in body) {
+    if (typeof body.clinic_name === 'string' && body.clinic_name.length > 200)
+      return NextResponse.json({ error: 'clinic_name máximo 200 caracteres' }, { status: 422 })
+    updates.clinic_name = body.clinic_name
+  }
+  if ('phone' in body) {
+    if (typeof body.phone === 'string' && body.phone.length > 50)
+      return NextResponse.json({ error: 'phone máximo 50 caracteres' }, { status: 422 })
+    updates.phone = body.phone
+  }
 
   if (Object.keys(updates).length === 0) {
     return NextResponse.json({ error: 'Nenhum campo válido' }, { status: 422 })

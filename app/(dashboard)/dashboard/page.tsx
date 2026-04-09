@@ -6,6 +6,16 @@ import { Users, CalendarCheck, MessageSquare, TrendingUp } from 'lucide-react'
 import type { Appointment } from '@/types'
 import { AppointmentsChart } from '@/components/ui/AppointmentsChart'
 
+async function getSubscriptionStatus(userId: string): Promise<string> {
+  const supabase = await createClient()
+  const { data } = await supabase
+    .from('profiles')
+    .select('subscription_status')
+    .eq('id', userId)
+    .single()
+  return (data?.subscription_status as string) ?? 'inactive'
+}
+
 async function getStats(userId: string) {
   const supabase = await createClient()
 
@@ -74,8 +84,8 @@ export default async function DashboardPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const { totalPatients, todayAppointments, todayMessages, conversionRate, recentAppointments, chartData } =
-    await getStats(user.id)
+  const [{ totalPatients, todayAppointments, todayMessages, conversionRate, recentAppointments, chartData }, subscriptionStatus] =
+    await Promise.all([getStats(user.id), getSubscriptionStatus(user.id)])
 
   const columns = [
     {
@@ -103,6 +113,15 @@ export default async function DashboardPage() {
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-white">Dashboard</h1>
+
+      {subscriptionStatus !== 'active' && (
+        <div className="flex items-center justify-between rounded-xl border border-yellow-500/30 bg-yellow-500/10 px-4 py-3 text-sm text-yellow-300">
+          <span>Sua assinatura está inativa. Ative para continuar usando o FisioGendor.</span>
+          <a href="/settings#billing" className="ml-4 shrink-0 rounded-lg bg-yellow-500/20 px-3 py-1 text-xs font-medium hover:bg-yellow-500/30">
+            Assinar agora
+          </a>
+        </div>
+      )}
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <StatsCard title="Total de Pacientes" value={totalPatients} icon={Users} />

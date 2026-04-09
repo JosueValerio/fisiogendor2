@@ -16,6 +16,9 @@ export async function POST(request: Request) {
   if (!patientId || !content) {
     return NextResponse.json({ error: 'patientId e content são obrigatórios' }, { status: 422 })
   }
+  if (typeof content === 'string' && content.length > 4000) {
+    return NextResponse.json({ error: 'content máximo 4000 caracteres' }, { status: 422 })
+  }
 
   // Garante que o paciente pertence ao usuário autenticado
   const { data: patient } = await supabase

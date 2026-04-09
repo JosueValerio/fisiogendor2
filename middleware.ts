@@ -33,6 +33,7 @@ export async function middleware(request: NextRequest) {
     request.nextUrl.pathname.startsWith('/auth') ||
     request.nextUrl.pathname.startsWith('/api/whatsapp/webhook') ||
     request.nextUrl.pathname.startsWith('/api/calendar/callback') ||
+    request.nextUrl.pathname.startsWith('/api/billing/webhook') ||
     request.nextUrl.pathname.startsWith('/_next') ||
     request.nextUrl.pathname.startsWith('/favicon')
 
@@ -47,6 +48,9 @@ export async function middleware(request: NextRequest) {
     url.pathname = '/dashboard'
     return NextResponse.redirect(url)
   }
+
+  // Expor pathname para Server Components (ex: layout.tsx pode ler via headers())
+  supabaseResponse.headers.set('x-pathname', request.nextUrl.pathname)
 
   return supabaseResponse
 }

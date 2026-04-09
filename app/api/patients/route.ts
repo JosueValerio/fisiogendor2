@@ -36,6 +36,9 @@ export async function POST(request: Request) {
   if (!name || !phone) {
     return NextResponse.json({ error: 'name e phone são obrigatórios' }, { status: 422 })
   }
+  if (typeof name === 'string' && name.length > 200) {
+    return NextResponse.json({ error: 'name máximo 200 caracteres' }, { status: 422 })
+  }
 
   const { data, error } = await supabase
     .from('patients')
