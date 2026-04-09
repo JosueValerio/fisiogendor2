@@ -36,7 +36,7 @@ export default function PatientsPage() {
         <div className="flex items-center gap-2">
           <div className="h-1.5 w-24 rounded-full bg-white/10">
             <div
-              className="h-full rounded-full bg-orange-500"
+              className="h-full rounded-full bg-[#2F64E0]"
               style={{ width: `${p.recovery_progress}%` }}
             />
           </div>
@@ -61,7 +61,7 @@ export default function PatientsPage() {
         <h1 className="text-2xl font-bold text-white">Pacientes</h1>
         <button
           onClick={() => setModalOpen(true)}
-          className="flex items-center gap-2 rounded-xl bg-orange-500 px-4 py-2 text-sm font-medium text-white hover:bg-orange-600"
+          className="flex items-center gap-2 rounded-md bg-[#2F64E0] px-4 py-2 text-sm font-medium text-white hover:bg-[#1E4FC7]"
         >
           <UserPlus className="h-4 w-4" />
           Novo Paciente

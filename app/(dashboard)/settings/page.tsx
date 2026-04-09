@@ -1,8 +1,9 @@
 'use client'
 
-import { useState, useEffect, Suspense } from 'react'
-import { CheckCircle, Link2, MessageCircle, CreditCard, AlertTriangle } from 'lucide-react'
+import { useState, useEffect, useRef, Suspense } from 'react'
+import { CheckCircle, Link2, MessageCircle, CreditCard, AlertTriangle, Wifi, WifiOff, RefreshCw } from 'lucide-react'
 import { useSearchParams, useRouter } from 'next/navigation'
+import Image from 'next/image'
 
 function SettingsContent() {
   const searchParams = useSearchParams()
@@ -18,6 +19,12 @@ function SettingsContent() {
   const [profileSaved, setProfileSaved] = useState(false)
   const [whatsappSaved, setWhatsappSaved] = useState(false)
   const [billingLoading, setBillingLoading] = useState(false)
+
+  // WhatsApp QR code state
+  const [whatsappStatus, setWhatsappStatus] = useState<'open' | 'close' | 'connecting' | null>(null)
+  const [qrCode, setQrCode] = useState<string | null>(null)
+  const [loadingQR, setLoadingQR] = useState(false)
+  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   useEffect(() => {
     Promise.all([
@@ -37,10 +44,50 @@ function SettingsContent() {
           google_calendar_id: agentData.settings.google_calendar_id ?? '',
           google_tokens: agentData.settings.google_tokens,
         })
+        if (agentData.settings.whatsapp_instance_id) {
+          checkWhatsappStatus()
+        }
       }
       setLoading(false)
     })
+    return () => { if (pollingRef.current) clearInterval(pollingRef.current) }
   }, [])
+
+  async function checkWhatsappStatus() {
+    const res = await fetch('/api/whatsapp/status')
+    const data = await res.json()
+    setWhatsappStatus(data.status ?? 'close')
+    return data.status as string
+  }
+
+  async function connectWhatsapp() {
+    setLoadingQR(true)
+    setQrCode(null)
+
+    const status = await checkWhatsappStatus()
+    if (status === 'open') { setLoadingQR(false); return }
+
+    const res = await fetch('/api/whatsapp/qrcode')
+    if (res.ok) {
+      const data = await res.json()
+      setQrCode(data.qrcode ?? null)
+    }
+    setLoadingQR(false)
+
+    // Polling a cada 5s para detectar quando escanear
+    if (pollingRef.current) clearInterval(pollingRef.current)
+    pollingRef.current = setInterval(async () => {
+      const s = await checkWhatsappStatus()
+      if (s === 'open') {
+        setQrCode(null)
+        if (pollingRef.current) clearInterval(pollingRef.current)
+      } else {
+        // Atualizar QR code a cada 30s (expira)
+        const r = await fetch('/api/whatsapp/qrcode')
+        if (r.ok) { const d = await r.json(); setQrCode(d.qrcode ?? null) }
+      }
+    }, 5000)
+  }
 
   async function saveProfile() {
     setSavingProfile(true)
@@ -87,62 +134,48 @@ function SettingsContent() {
   if (loading) return <div className="flex h-40 items-center justify-center"><p className="text-sm text-white/40">Carregando...</p></div>
 
   return (
-    <div className="space-y-6 max-w-2xl">
+    <div className="space-y-4 max-w-2xl">
       <h1 className="text-2xl font-bold text-white">Configurações</h1>
 
       {calendarParam === 'connected' && (
-        <div className="flex items-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-300">
-          <CheckCircle className="h-4 w-4" />
-          Google Calendar conectado com sucesso!
-        </div>
-      )}
-      {calendarParam === 'error' && (
-        <div className="flex items-center gap-2 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
-          Erro ao conectar o Google Calendar. Tente novamente.
-        </div>
-      )}
-      {subscriptionParam === 'success' && (
-        <div className="flex items-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-300">
-          <CheckCircle className="h-4 w-4" />
-          Assinatura ativada com sucesso!
+        <div className="flex items-center gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-300">
+          <CheckCircle className="h-4 w-4" /> Google Calendar conectado com sucesso!
         </div>
       )}
       {subscriptionParam === 'required' && (
-        <div className="flex items-center gap-2 rounded-xl border border-yellow-500/30 bg-yellow-500/10 px-4 py-3 text-sm text-yellow-300">
-          <AlertTriangle className="h-4 w-4" />
-          É necessário ter uma assinatura ativa para acessar o painel.
+        <div className="flex items-center gap-2 rounded-lg border border-yellow-500/30 bg-yellow-500/10 px-4 py-3 text-sm text-yellow-300">
+          <AlertTriangle className="h-4 w-4" /> É necessário ter uma assinatura ativa para acessar o painel.
+        </div>
+      )}
+      {subscriptionParam === 'success' && (
+        <div className="flex items-center gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-300">
+          <CheckCircle className="h-4 w-4" /> Assinatura ativada com sucesso!
         </div>
       )}
 
       {/* Clínica */}
-      <div className="rounded-2xl border border-white/10 bg-white/5 p-5 space-y-4">
+      <div className="rounded-lg border border-white/10 bg-white/5 p-5 space-y-4">
         <p className="text-sm font-semibold text-white">Informações da Clínica</p>
         <div>
           <label className="mb-1 block text-xs text-white/50">Nome da Clínica</label>
-          <input
-            value={profile.clinic_name}
-            onChange={(e) => setProfile((p) => ({ ...p, clinic_name: e.target.value }))}
-            className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-orange-500/50"
-            placeholder="Clínica FisioVida"
-          />
+          <input value={profile.clinic_name} onChange={(e) => setProfile((p) => ({ ...p, clinic_name: e.target.value }))}
+            className="w-full rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-[#2F64E0]/50"
+            placeholder="Clínica FisioVida" />
         </div>
         <div>
           <label className="mb-1 block text-xs text-white/50">Telefone</label>
-          <input
-            value={profile.phone}
-            onChange={(e) => setProfile((p) => ({ ...p, phone: e.target.value }))}
-            className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-orange-500/50"
-            placeholder="5511999999999"
-          />
+          <input value={profile.phone} onChange={(e) => setProfile((p) => ({ ...p, phone: e.target.value }))}
+            className="w-full rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-[#2F64E0]/50"
+            placeholder="5511999999999" />
         </div>
         <button onClick={saveProfile} disabled={savingProfile}
-          className="rounded-xl bg-orange-500 px-4 py-2 text-sm font-medium text-white hover:bg-orange-600 disabled:opacity-50">
+          className="rounded-md bg-[#2F64E0] px-4 py-2 text-sm font-medium text-white hover:bg-[#1E4FC7] disabled:opacity-50">
           {profileSaved ? 'Salvo!' : savingProfile ? 'Salvando...' : 'Salvar'}
         </button>
       </div>
 
       {/* Google Calendar */}
-      <div className="rounded-2xl border border-white/10 bg-white/5 p-5 space-y-4">
+      <div className="rounded-lg border border-white/10 bg-white/5 p-5 space-y-4">
         <div className="flex items-center gap-2">
           <p className="text-sm font-semibold text-white">Google Calendar</p>
           {agentSettings.google_tokens ? (
@@ -153,75 +186,113 @@ function SettingsContent() {
             <span className="rounded-full bg-white/10 px-2.5 py-0.5 text-xs text-white/40">Desconectado</span>
           )}
         </div>
-
         {agentSettings.google_tokens ? (
           <div className="space-y-3">
             <div>
               <label className="mb-1 block text-xs text-white/50">ID do Calendário</label>
-              <input
-                value={agentSettings.google_calendar_id}
+              <input value={agentSettings.google_calendar_id}
                 onChange={(e) => setAgentSettings((s) => ({ ...s, google_calendar_id: e.target.value }))}
-                className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-orange-500/50"
-                placeholder="primary"
-              />
+                className="w-full rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-[#2F64E0]/50"
+                placeholder="primary" />
               <p className="mt-1 text-xs text-white/30">Use &quot;primary&quot; para o calendário principal</p>
             </div>
             <div className="flex gap-2">
               <button onClick={saveWhatsapp} disabled={savingWhatsapp}
-                className="rounded-xl bg-orange-500 px-4 py-2 text-sm font-medium text-white hover:bg-orange-600 disabled:opacity-50">
+                className="rounded-md bg-[#2F64E0] px-4 py-2 text-sm font-medium text-white hover:bg-[#1E4FC7] disabled:opacity-50">
                 {whatsappSaved ? 'Salvo!' : 'Salvar ID'}
               </button>
               <a href="/api/calendar/connect"
-                className="flex items-center gap-1.5 rounded-xl border border-white/10 px-4 py-2 text-sm text-white/60 hover:bg-white/5">
+                className="flex items-center gap-1.5 rounded-md border border-white/10 px-4 py-2 text-sm text-white/60 hover:bg-white/5">
                 <Link2 className="h-4 w-4" /> Reconectar
               </a>
             </div>
           </div>
         ) : (
           <a href="/api/calendar/connect"
-            className="inline-flex items-center gap-2 rounded-xl bg-white/10 px-4 py-2.5 text-sm text-white hover:bg-white/20">
+            className="inline-flex items-center gap-2 rounded-md bg-white/10 px-4 py-2.5 text-sm text-white hover:bg-white/20">
             <Link2 className="h-4 w-4" /> Conectar Google Calendar
           </a>
         )}
       </div>
 
       {/* WhatsApp */}
-      <div className="rounded-2xl border border-white/10 bg-white/5 p-5 space-y-4">
-        <div className="flex items-center gap-2">
-          <MessageCircle className="h-4 w-4 text-emerald-400" />
-          <p className="text-sm font-semibold text-white">WhatsApp (Evolution API)</p>
+      <div className="rounded-lg border border-white/10 bg-white/5 p-5 space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <MessageCircle className="h-4 w-4 text-emerald-400" />
+            <p className="text-sm font-semibold text-white">WhatsApp</p>
+          </div>
+          {whatsappStatus === 'open' ? (
+            <span className="flex items-center gap-1 rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-xs text-emerald-300">
+              <Wifi className="h-3 w-3" /> Conectado
+            </span>
+          ) : whatsappStatus === 'connecting' ? (
+            <span className="flex items-center gap-1 rounded-full bg-yellow-500/10 px-2.5 py-0.5 text-xs text-yellow-300">
+              <RefreshCw className="h-3 w-3 animate-spin" /> Aguardando scan
+            </span>
+          ) : whatsappStatus === 'close' ? (
+            <span className="flex items-center gap-1 rounded-full bg-red-500/10 px-2.5 py-0.5 text-xs text-red-300">
+              <WifiOff className="h-3 w-3" /> Desconectado
+            </span>
+          ) : null}
         </div>
+
         <div>
           <label className="mb-1 block text-xs text-white/50">Nome da Instância</label>
-          <input
-            value={agentSettings.whatsapp_instance_id}
+          <input value={agentSettings.whatsapp_instance_id}
             onChange={(e) => setAgentSettings((s) => ({ ...s, whatsapp_instance_id: e.target.value }))}
-            className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-orange-500/50"
-            placeholder="fisiogendor-instance"
-          />
-          <p className="mt-1 text-xs text-white/30">Nome da instância configurada na Evolution API</p>
+            className="w-full rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-[#2F64E0]/50"
+            placeholder="fisiogendor-clinica" />
+          <p className="mt-1 text-xs text-white/30">Nome único para identificar sua instância WhatsApp</p>
         </div>
-        <button onClick={saveWhatsapp} disabled={savingWhatsapp}
-          className="rounded-xl bg-orange-500 px-4 py-2 text-sm font-medium text-white hover:bg-orange-600 disabled:opacity-50">
-          {whatsappSaved ? 'Salvo!' : savingWhatsapp ? 'Salvando...' : 'Salvar'}
-        </button>
+
+        <div className="flex gap-2">
+          <button onClick={saveWhatsapp} disabled={savingWhatsapp}
+            className="rounded-md border border-white/10 px-4 py-2 text-sm text-white/70 hover:bg-white/5 disabled:opacity-50">
+            {whatsappSaved ? 'Salvo!' : 'Salvar nome'}
+          </button>
+          {agentSettings.whatsapp_instance_id && whatsappStatus !== 'open' && (
+            <button onClick={connectWhatsapp} disabled={loadingQR}
+              className="rounded-md bg-[#2F64E0] px-4 py-2 text-sm font-medium text-white hover:bg-[#1E4FC7] disabled:opacity-50">
+              {loadingQR ? 'Carregando QR...' : 'Conectar WhatsApp'}
+            </button>
+          )}
+          {whatsappStatus === 'open' && agentSettings.whatsapp_instance_id && (
+            <button onClick={checkWhatsappStatus}
+              className="rounded-md border border-white/10 px-4 py-2 text-sm text-white/60 hover:bg-white/5">
+              <RefreshCw className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+
+        {/* QR Code */}
+        {qrCode && whatsappStatus !== 'open' && (
+          <div className="flex flex-col items-center gap-3 rounded-lg border border-white/10 bg-white/5 p-4">
+            <p className="text-xs text-white/50">Escaneie com o WhatsApp do seu celular</p>
+            <div className="rounded-lg bg-white p-2">
+              {qrCode.startsWith('data:image') ? (
+                <Image src={qrCode} alt="QR Code WhatsApp" width={200} height={200} className="rounded" unoptimized />
+              ) : (
+                <img src={qrCode} alt="QR Code WhatsApp" className="h-48 w-48 rounded" />
+              )}
+            </div>
+            <p className="text-xs text-white/30">O QR code atualiza automaticamente a cada 30s</p>
+          </div>
+        )}
       </div>
 
       {/* Assinatura */}
-      <div id="billing" className="rounded-2xl border border-white/10 bg-white/5 p-5 space-y-4">
+      <div id="billing" className="rounded-lg border border-white/10 bg-white/5 p-5 space-y-4">
         <div className="flex items-center gap-2">
-          <CreditCard className="h-4 w-4 text-orange-400" />
+          <CreditCard className="h-4 w-4 text-[#5B8FF5]" />
           <p className="text-sm font-semibold text-white">Assinatura</p>
-          <span className={`rounded-full border px-2.5 py-0.5 text-xs ${statusBadge.color}`}>
-            {statusBadge.label}
-          </span>
+          <span className={`rounded-full border px-2.5 py-0.5 text-xs ${statusBadge.color}`}>{statusBadge.label}</span>
         </div>
-
         {profile.subscription_status === 'active' ? (
           <div className="space-y-3">
             <p className="text-xs text-white/50">Plano FisioGendor — R$ 97/mês</p>
             <button onClick={handlePortal} disabled={billingLoading}
-              className="rounded-xl border border-white/10 px-4 py-2 text-sm text-white/70 hover:bg-white/5 disabled:opacity-50">
+              className="rounded-md border border-white/10 px-4 py-2 text-sm text-white/70 hover:bg-white/5 disabled:opacity-50">
               {billingLoading ? 'Aguarde...' : 'Gerenciar assinatura'}
             </button>
           </div>
@@ -229,7 +300,7 @@ function SettingsContent() {
           <div className="space-y-3">
             <p className="text-xs text-white/50">Acesse todos os recursos por R$ 97/mês</p>
             <button onClick={handleCheckout} disabled={billingLoading}
-              className="rounded-xl bg-orange-500 px-4 py-2.5 text-sm font-medium text-white hover:bg-orange-600 disabled:opacity-50">
+              className="rounded-md bg-[#2F64E0] px-4 py-2.5 text-sm font-medium text-white hover:bg-[#1E4FC7] disabled:opacity-50">
               {billingLoading ? 'Aguarde...' : 'Assinar agora'}
             </button>
           </div>

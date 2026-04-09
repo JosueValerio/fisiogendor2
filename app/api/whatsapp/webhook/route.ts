@@ -84,7 +84,7 @@ export async function POST(request: NextRequest) {
   } else {
     const { data: newPatient, error: insertError } = await db
       .from('patients')
-      .insert({ user_id: userId, name: fromNumber, phone: fromNumber, recovery_progress: 0 })
+      .insert({ user_id: userId, name: fromNumber, phone: fromNumber, recovery_progress: 0, is_patient: false })
       .select('id')
       .single()
 

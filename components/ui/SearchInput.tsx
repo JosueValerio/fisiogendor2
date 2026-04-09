@@ -27,7 +27,7 @@ export function SearchInput({ placeholder = 'Buscar...', onSearch, debounceMs = 
         value={value}
         onChange={(e) => setValue(e.target.value)}
         placeholder={placeholder}
-        className="w-full rounded-xl border border-white/10 bg-white/5 py-2 pl-9 pr-4 text-sm text-white placeholder-white/30 outline-none focus:border-orange-500/50 focus:ring-1 focus:ring-orange-500/30"
+        className="w-full rounded-md border border-white/10 bg-white/5 py-2 pl-9 pr-4 text-sm text-white placeholder-white/30 outline-none focus:border-[#2F64E0]/50 focus:ring-1 focus:ring-[#2F64E0]/30"
       />
     </div>
   )

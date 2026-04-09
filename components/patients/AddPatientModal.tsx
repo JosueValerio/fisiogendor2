@@ -60,7 +60,7 @@ export function AddPatientModal({ isOpen, onClose, onAdded }: AddPatientModalPro
           <input
             value={form.name}
             onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-            className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-orange-500/50"
+            className="w-full rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-[#2F64E0]/50"
             placeholder="Nome completo"
           />
           {errors.name && <p className="mt-1 text-xs text-red-400">{errors.name}</p>}
@@ -71,7 +71,7 @@ export function AddPatientModal({ isOpen, onClose, onAdded }: AddPatientModalPro
           <input
             value={form.phone}
             onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
-            className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-orange-500/50"
+            className="w-full rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-[#2F64E0]/50"
             placeholder="5511999999999"
           />
           {errors.phone && <p className="mt-1 text-xs text-red-400">{errors.phone}</p>}
@@ -83,7 +83,7 @@ export function AddPatientModal({ isOpen, onClose, onAdded }: AddPatientModalPro
             type="email"
             value={form.email}
             onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
-            className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-orange-500/50"
+            className="w-full rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-[#2F64E0]/50"
             placeholder="paciente@email.com"
           />
         </div>
@@ -94,7 +94,7 @@ export function AddPatientModal({ isOpen, onClose, onAdded }: AddPatientModalPro
             value={form.clinical_history}
             onChange={(e) => setForm((f) => ({ ...f, clinical_history: e.target.value }))}
             rows={3}
-            className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-orange-500/50 resize-none"
+            className="w-full rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-[#2F64E0]/50 resize-none"
             placeholder="Diagnóstico, histórico relevante..."
           />
         </div>
@@ -103,14 +103,14 @@ export function AddPatientModal({ isOpen, onClose, onAdded }: AddPatientModalPro
           <button
             type="button"
             onClick={onClose}
-            className="rounded-xl border border-white/10 px-4 py-2 text-sm text-white/60 hover:bg-white/5"
+            className="rounded-md border border-white/10 px-4 py-2 text-sm text-white/60 hover:bg-white/5"
           >
             Cancelar
           </button>
           <button
             type="submit"
             disabled={loading}
-            className="rounded-xl bg-orange-500 px-4 py-2 text-sm font-medium text-white hover:bg-orange-600 disabled:opacity-50"
+            className="rounded-md bg-[#2F64E0] px-4 py-2 text-sm font-medium text-white hover:bg-[#1E4FC7] disabled:opacity-50"
           >
             {loading ? 'Salvando...' : 'Adicionar Paciente'}
           </button>

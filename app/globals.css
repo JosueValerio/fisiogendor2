@@ -10,8 +10,9 @@
   --color-surface-high: #201F1F;
   --color-surface-highest: #262626;
 
-  --color-primary: #FF9F4A;
-  --color-secondary: #FF734C;
+  --color-primary: #2F64E0;
+  --color-secondary: #1E4FC7;
+  --color-primary-light: #5B8FF5;
   --color-on-surface-variant: #ADAAAA;
 
   --radius-lg: 0.5rem;
@@ -26,7 +27,7 @@
 }
 
 .sunset-gradient {
-  background: linear-gradient(135deg, #FF9F4A 0%, #FF734C 100%);
+  background: linear-gradient(135deg, #2F64E0 0%, #1E4FC7 100%);
 }
 
 .glass-card {
@@ -36,7 +37,7 @@
 }
 
 .orange-gradient-text {
-  background: linear-gradient(to right, #FF9F4A, #FF734C);
+  background: linear-gradient(to right, #2F64E0, #5B8FF5);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }

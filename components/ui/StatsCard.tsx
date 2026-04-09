@@ -13,14 +13,14 @@ export function StatsCard({ title, value, icon: Icon, trend, trendLabel }: Stats
   const isPositive = trend !== undefined && trend >= 0
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/5 p-5 backdrop-blur-sm">
+    <div className="rounded-lg border border-white/10 bg-white/5 p-5 backdrop-blur-sm">
       <div className="flex items-start justify-between">
         <div>
           <p className="text-sm text-white/50">{title}</p>
           <p className="mt-1 text-3xl font-bold text-white">{value}</p>
         </div>
-        <div className="rounded-xl bg-orange-500/10 p-2.5">
-          <Icon className="h-5 w-5 text-orange-400" />
+        <div className="rounded-md bg-[#2F64E0]/10 p-2.5">
+          <Icon className="h-5 w-5 text-[#5B8FF5]" />
         </div>
       </div>
 

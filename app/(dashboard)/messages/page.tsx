@@ -9,7 +9,7 @@ interface Conversation {
   content: string
   direction: string
   created_at: string
-  patient: { name: string; phone: string } | null
+  patient: { name: string; phone: string; is_patient?: boolean } | null
 }
 
 export default function MessagesPage() {
@@ -27,11 +27,21 @@ export default function MessagesPage() {
 
   const selectedConversation = conversations.find((c) => c.patient_id === selectedId)
 
+  function handlePromoted(patientId: string, name: string) {
+    setConversations((prev) =>
+      prev.map((c) =>
+        c.patient_id === patientId
+          ? { ...c, patient: { ...c.patient!, name, is_patient: true } }
+          : c
+      )
+    )
+  }
+
   return (
     <div className="space-y-4">
       <h1 className="text-2xl font-bold text-white">WhatsApp</h1>
 
-      <div className="flex h-[calc(100vh-12rem)] overflow-hidden rounded-2xl border border-white/10 bg-white/5">
+      <div className="flex h-[calc(100vh-12rem)] overflow-hidden rounded-lg border border-white/10 bg-white/5">
         <div className="w-72 flex-shrink-0 border-r border-white/10">
           <div className="border-b border-white/10 p-3">
             <p className="text-sm font-medium text-white/60">Conversas</p>
@@ -43,11 +53,14 @@ export default function MessagesPage() {
           />
         </div>
 
-        <div className="flex-1">
+        <div className="flex-1 min-w-0">
           {selectedId && selectedConversation ? (
             <MessageThread
               patientId={selectedId}
               patientName={selectedConversation.patient?.name ?? selectedId}
+              isPatient={selectedConversation.patient?.is_patient !== false}
+              patientPhone={selectedConversation.patient?.phone ?? ''}
+              onPromoted={handlePromoted}
             />
           ) : (
             <div className="flex h-full items-center justify-center">

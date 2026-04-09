@@ -48,7 +48,7 @@ export default function LoginPage() {
       <button
         onClick={handleGoogleLogin}
         disabled={loading}
-        className="w-full py-5 bg-white text-black rounded-2xl font-bold text-lg flex items-center justify-center gap-3 hover:bg-white/90 active:scale-95 transition-all shadow-xl disabled:opacity-60 disabled:cursor-not-allowed"
+        className="w-full py-5 bg-white text-black rounded-xl font-bold text-lg flex items-center justify-center gap-3 hover:bg-white/90 active:scale-95 transition-all shadow-xl disabled:opacity-60 disabled:cursor-not-allowed"
       >
         {loading ? (
           <div className="w-6 h-6 border-2 border-black/20 border-t-black rounded-full animate-spin" />

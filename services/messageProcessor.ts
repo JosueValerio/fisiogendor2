@@ -52,12 +52,13 @@ export async function processMessage(payload: QueuePayload): Promise<void> {
   // Carregar dados do paciente
   const { data: patient } = await db
     .from('patients')
-    .select('name, phone')
+    .select('name, phone, is_patient')
     .eq('id', patientId)
     .eq('user_id', userId)
     .single()
 
-  if (!patient) return
+  // Não processar mensagens de contatos não-aprovados como pacientes
+  if (!patient || !patient.is_patient) return
 
   // Verificar horário de funcionamento
   if (!isWithinOperatingHours(settings.operating_hours as AgentSettings['operating_hours'])) {

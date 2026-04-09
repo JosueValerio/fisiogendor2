@@ -91,16 +91,16 @@ export default function AIAgentPage() {
         <button
           onClick={handleSave}
           disabled={saving}
-          className="rounded-xl bg-orange-500 px-4 py-2 text-sm font-medium text-white hover:bg-orange-600 disabled:opacity-50"
+          className="rounded-md bg-[#2F64E0] px-4 py-2 text-sm font-medium text-white hover:bg-[#1E4FC7] disabled:opacity-50"
         >
           {saved ? 'Salvo!' : saving ? 'Salvando...' : 'Salvar'}
         </button>
       </div>
 
       {/* Toggle AI */}
-      <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 p-5">
+      <div className="flex items-center justify-between rounded-lg border border-white/10 bg-white/5 p-5">
         <div className="flex items-center gap-3">
-          <Bot className="h-5 w-5 text-orange-400" />
+          <Bot className="h-5 w-5 text-[#5B8FF5]" />
           <div>
             <p className="text-sm font-medium text-white">Agente Automático</p>
             <p className="text-xs text-white/40">Responde automaticamente às mensagens WhatsApp</p>
@@ -108,21 +108,21 @@ export default function AIAgentPage() {
         </div>
         <button
           onClick={() => setSettings((s) => ({ ...s, ai_enabled: !s.ai_enabled }))}
-          className={`relative h-6 w-11 rounded-full transition-colors ${settings.ai_enabled ? 'bg-orange-500' : 'bg-white/20'}`}
+          className={`relative h-6 w-11 rounded-full transition-colors ${settings.ai_enabled ? 'bg-[#2F64E0]' : 'bg-white/20'}`}
         >
           <span className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${settings.ai_enabled ? 'translate-x-5' : ''}`} />
         </button>
       </div>
 
       {/* Tom de voz */}
-      <div className="rounded-2xl border border-white/10 bg-white/5 p-5 space-y-3">
+      <div className="rounded-lg border border-white/10 bg-white/5 p-5 space-y-3">
         <p className="text-sm font-medium text-white">Tom de Voz</p>
         <div className="grid grid-cols-3 gap-3">
           {tones.map((t) => (
             <button
               key={t.value}
               onClick={() => setSettings((s) => ({ ...s, ai_tone: t.value }))}
-              className={`rounded-xl border p-3 text-left transition-colors ${settings.ai_tone === t.value ? 'border-orange-500/60 bg-orange-500/10' : 'border-white/10 hover:bg-white/5'}`}
+              className={`rounded-md border p-3 text-left transition-colors ${settings.ai_tone === t.value ? 'border-[#2F64E0]/60 bg-[#2F64E0]/10' : 'border-white/10 hover:bg-white/5'}`}
             >
               <p className="text-sm font-medium text-white">{t.label}</p>
               <p className="text-xs text-white/40">{t.desc}</p>
@@ -132,7 +132,7 @@ export default function AIAgentPage() {
       </div>
 
       {/* Horários */}
-      <div className="rounded-2xl border border-white/10 bg-white/5 p-5 space-y-3">
+      <div className="rounded-lg border border-white/10 bg-white/5 p-5 space-y-3">
         <p className="text-sm font-medium text-white">Horário de Funcionamento</p>
         <div className="space-y-2">
           {DAYS.map(({ key, label }) => {
@@ -141,16 +141,16 @@ export default function AIAgentPage() {
               <div key={key} className="flex items-center gap-3">
                 <button
                   onClick={() => updateHours(key, 'enabled', !h.enabled)}
-                  className={`relative h-5 w-9 flex-shrink-0 rounded-full transition-colors ${h.enabled ? 'bg-orange-500' : 'bg-white/20'}`}
+                  className={`relative h-5 w-9 flex-shrink-0 rounded-full transition-colors ${h.enabled ? 'bg-[#2F64E0]' : 'bg-white/20'}`}
                 >
                   <span className={`absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-white transition-transform ${h.enabled ? 'translate-x-4' : ''}`} />
                 </button>
                 <span className="w-16 text-sm text-white/70">{label}</span>
                 <input type="time" value={h.start} onChange={(e) => updateHours(key, 'start', e.target.value)} disabled={!h.enabled}
-                  className="rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-sm text-white disabled:opacity-30 outline-none focus:border-orange-500/50" />
+                  className="rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-sm text-white disabled:opacity-30 outline-none focus:border-[#2F64E0]/50" />
                 <span className="text-white/30">—</span>
                 <input type="time" value={h.end} onChange={(e) => updateHours(key, 'end', e.target.value)} disabled={!h.enabled}
-                  className="rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-sm text-white disabled:opacity-30 outline-none focus:border-orange-500/50" />
+                  className="rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-sm text-white disabled:opacity-30 outline-none focus:border-[#2F64E0]/50" />
               </div>
             )
           })}
@@ -158,7 +158,7 @@ export default function AIAgentPage() {
       </div>
 
       {/* Keywords */}
-      <div className="rounded-2xl border border-white/10 bg-white/5 p-5 space-y-3">
+      <div className="rounded-lg border border-white/10 bg-white/5 p-5 space-y-3">
         <p className="text-sm font-medium text-white">Palavras-Chave para Ativação</p>
         <div className="flex flex-wrap gap-2">
           {(settings.trigger_keywords ?? []).map((kw) => (
@@ -174,23 +174,23 @@ export default function AIAgentPage() {
             onChange={(e) => setNewKeyword(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && addKeyword()}
             placeholder="Nova palavra-chave (Enter para adicionar)"
-            className="flex-1 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder-white/30 outline-none focus:border-orange-500/50"
+            className="flex-1 rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder-white/30 outline-none focus:border-[#2F64E0]/50"
           />
-          <button onClick={addKeyword} className="rounded-xl bg-white/10 px-3 py-2 text-sm text-white hover:bg-white/20">
+          <button onClick={addKeyword} className="rounded-md bg-white/10 px-3 py-2 text-sm text-white hover:bg-white/20">
             Adicionar
           </button>
         </div>
       </div>
 
       {/* Instruções específicas */}
-      <div className="rounded-2xl border border-white/10 bg-white/5 p-5 space-y-3">
+      <div className="rounded-lg border border-white/10 bg-white/5 p-5 space-y-3">
         <p className="text-sm font-medium text-white">Instruções Específicas</p>
         <textarea
           value={settings.specific_instructions ?? ''}
           onChange={(e) => setSettings((s) => ({ ...s, specific_instructions: e.target.value }))}
           rows={4}
           placeholder="Ex: Sempre perguntar o plano de saúde do paciente. Não agendar para sábados..."
-          className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder-white/30 outline-none resize-none focus:border-orange-500/50"
+          className="w-full rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder-white/30 outline-none resize-none focus:border-[#2F64E0]/50"
         />
       </div>
     </div>

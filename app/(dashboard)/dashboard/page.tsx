@@ -115,7 +115,7 @@ export default async function DashboardPage() {
       <h1 className="text-2xl font-bold text-white">Dashboard</h1>
 
       {subscriptionStatus !== 'active' && (
-        <div className="flex items-center justify-between rounded-xl border border-yellow-500/30 bg-yellow-500/10 px-4 py-3 text-sm text-yellow-300">
+        <div className="flex items-center justify-between rounded-lg border border-yellow-500/30 bg-yellow-500/10 px-4 py-3 text-sm text-yellow-300">
           <span>Sua assinatura está inativa. Ative para continuar usando o FisioGendor.</span>
           <a href="/settings#billing" className="ml-4 shrink-0 rounded-lg bg-yellow-500/20 px-3 py-1 text-xs font-medium hover:bg-yellow-500/30">
             Assinar agora
@@ -130,7 +130,7 @@ export default async function DashboardPage() {
         <StatsCard title="Taxa de Conversão" value={`${conversionRate}%`} icon={TrendingUp} />
       </div>
 
-      <div className="rounded-2xl border border-white/10 bg-white/5 p-5 backdrop-blur-sm">
+      <div className="rounded-lg border border-white/10 bg-white/5 p-5 backdrop-blur-sm">
         <h2 className="mb-4 text-sm font-medium text-white/70">Agendamentos — últimos 7 dias</h2>
         <AppointmentsChart data={chartData} />
       </div>
