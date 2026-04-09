@@ -6,7 +6,6 @@ on:
   workflow_dispatch:
 
 jobs:
-  # Job 1: verifica se o Next.js build passa no Ubuntu antes de tentar Docker
   test-build:
     runs-on: ubuntu-latest
     steps:
@@ -30,7 +29,6 @@ jobs:
           NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: pk_test_51TJYJDAnqCx18ZdWFztvB9pWWiaaSoadcZ8bXiPH87PmMPskls1Rz3cjcbTdvm43v4Z5XeSJrxIujIrvjti3vEuY00lQ27rjpI
           NEXT_PUBLIC_APP_URL: https://www.fisiogendor.com
 
-  # Job 2: build Docker e push para GHCR (só roda se Job 1 passar)
   docker-push:
     needs: test-build
     runs-on: ubuntu-latest
@@ -42,28 +40,22 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
       - name: Log in to GHCR
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
 
-      - name: Build and push
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          push: true
-          tags: |
-            ghcr.io/${{ github.repository_owner }}/fisiogendor2:latest
-            ghcr.io/${{ github.repository_owner }}/fisiogendor2:${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          build-args: |
-            NEXT_PUBLIC_SUPABASE_URL=https://spaijkmjopvcqudfswxs.supabase.co
-            NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNwYWlqa21qb3B2Y3F1ZGZzd3hzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU2MDYwNTEsImV4cCI6MjA5MTE4MjA1MX0.R-ZZSdsCY7lrEKDCp2Cg-nSlzgD58lLLz6l3joburNY
-            NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_51TJYJDAnqCx18ZdWFztvB9pWWiaaSoadcZ8bXiPH87PmMPskls1Rz3cjcbTdvm43v4Z5XeSJrxIujIrvjti3vEuY00lQ27rjpI
-            NEXT_PUBLIC_APP_URL=https://www.fisiogendor.com
+      - name: Build Docker image
+        run: |
+          docker build \
+            --progress=plain \
+            --build-arg NEXT_PUBLIC_SUPABASE_URL="https://spaijkmjopvcqudfswxs.supabase.co" \
+            --build-arg NEXT_PUBLIC_SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNwYWlqa21qb3B2Y3F1ZGZzd3hzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU2MDYwNTEsImV4cCI6MjA5MTE4MjA1MX0.R-ZZSdsCY7lrEKDCp2Cg-nSlzgD58lLLz6l3joburNY" \
+            --build-arg NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY="pk_test_51TJYJDAnqCx18ZdWFztvB9pWWiaaSoadcZ8bXiPH87PmMPskls1Rz3cjcbTdvm43v4Z5XeSJrxIujIrvjti3vEuY00lQ27rjpI" \
+            --build-arg NEXT_PUBLIC_APP_URL="https://www.fisiogendor.com" \
+            -t ghcr.io/${{ github.repository_owner }}/fisiogendor2:latest \
+            -t ghcr.io/${{ github.repository_owner }}/fisiogendor2:${{ github.sha }} \
+            .
+
+      - name: Push Docker image
+        run: |
+          docker push ghcr.io/${{ github.repository_owner }}/fisiogendor2:latest
+          docker push ghcr.io/${{ github.repository_owner }}/fisiogendor2:${{ github.sha }}
