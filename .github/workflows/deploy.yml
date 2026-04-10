@@ -43,5 +43,38 @@ jobs:
           username: root
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
+            mkdir -p /root/fisiogendor
+
+            cat > /root/fisiogendor/docker-compose.yml << 'COMPOSEFILE'
+            services:
+              app:
+                image: ghcr.io/josuevalerio/fisiogendor2:latest
+                restart: always
+                ports:
+                  - "3000:3000"
+                env_file: .env
+              worker:
+                image: ghcr.io/josuevalerio/fisiogendor2:latest
+                restart: always
+                command: node worker-bundle.js
+                env_file: .env
+            COMPOSEFILE
+
+            cat > /root/fisiogendor/.env << ENVFILE
+            SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+            OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
+            STRIPE_SECRET_KEY=${{ secrets.STRIPE_SECRET_KEY }}
+            STRIPE_WEBHOOK_SECRET=${{ secrets.STRIPE_WEBHOOK_SECRET }}
+            STRIPE_PRICE_ID=${{ secrets.STRIPE_PRICE_ID }}
+            EVOLUTION_API_URL=${{ secrets.EVOLUTION_API_URL }}
+            EVOLUTION_API_KEY=${{ secrets.EVOLUTION_API_KEY }}
+            GLOBAL_API_KEY=${{ secrets.GLOBAL_API_KEY }}
+            GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
+            GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
+            REDIS_URL=${{ secrets.REDIS_URL }}
+            NEXT_PUBLIC_APP_URL=https://www.fisiogendor.com
+            ENVFILE
+
+            cd /root/fisiogendor
             docker pull ghcr.io/josuevalerio/fisiogendor2:latest
-            docker compose -p fisiogendor-app up -d --no-build --remove-orphans
+            docker compose up -d --no-build --remove-orphans

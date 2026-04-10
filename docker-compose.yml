@@ -1,0 +1,13 @@
+services:
+  app:
+    image: ghcr.io/josuevalerio/fisiogendor2:latest
+    restart: always
+    ports:
+      - "3000:3000"
+    env_file: .env
+
+  worker:
+    image: ghcr.io/josuevalerio/fisiogendor2:latest
+    restart: always
+    command: node worker-bundle.js
+    env_file: .env
