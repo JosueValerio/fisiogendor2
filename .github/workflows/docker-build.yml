@@ -19,31 +19,34 @@ jobs:
       - name: Log in to GHCR
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
 
-      - name: Verify Docker and pull base image
+      - name: Debug environment
         run: |
-          docker version
-          docker pull node:24-slim
-          echo "Base image pulled successfully"
+          set -x
+          echo "IMAGE=ghcr.io/josuevalerio/fisiogendor2"
+          echo "SHA=${{ github.sha }}"
+          docker version --format '{{.Server.Version}}'
+          ls -la Dockerfile .dockerignore || true
+          echo "Context size: $(du -sh . 2>/dev/null | cut -f1)"
+
+      - name: Minimal Docker test
+        run: |
+          echo "FROM node:24-slim" > /tmp/Dockerfile.test
+          echo 'RUN echo "hello from container"' >> /tmp/Dockerfile.test
+          docker build -f /tmp/Dockerfile.test /tmp/ && echo "Minimal build OK"
 
       - name: Build Docker image
-        env:
-          IMAGE: ghcr.io/josuevalerio/fisiogendor2
-          SHA: ${{ github.sha }}
         run: |
+          set -x
           docker build \
             --progress=plain \
             --build-arg NEXT_PUBLIC_SUPABASE_URL="https://spaijkmjopvcqudfswxs.supabase.co" \
             --build-arg NEXT_PUBLIC_SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNwYWlqa21qb3B2Y3F1ZGZzd3hzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU2MDYwNTEsImV4cCI6MjA5MTE4MjA1MX0.R-ZZSdsCY7lrEKDCp2Cg-nSlzgD58lLLz6l3joburNY" \
             --build-arg NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY="pk_test_51TJYJDAnqCx18ZdWFztvB9pWWiaaSoadcZ8bXiPH87PmMPskls1Rz3cjcbTdvm43v4Z5XeSJrxIujIrvjti3vEuY00lQ27rjpI" \
             --build-arg NEXT_PUBLIC_APP_URL="https://www.fisiogendor.com" \
-            -t "${IMAGE}:latest" \
-            -t "${IMAGE}:${SHA}" \
+            -t "ghcr.io/josuevalerio/fisiogendor2:latest" \
             .
 
       - name: Push Docker image
-        env:
-          IMAGE: ghcr.io/josuevalerio/fisiogendor2
-          SHA: ${{ github.sha }}
         run: |
-          docker push "${IMAGE}:latest"
-          docker push "${IMAGE}:${SHA}"
+          docker push "ghcr.io/josuevalerio/fisiogendor2:latest"
+          docker push "ghcr.io/josuevalerio/fisiogendor2:${{ github.sha }}"
