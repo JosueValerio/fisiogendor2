@@ -79,8 +79,8 @@ jobs:
             STRIPE_SECRET_KEY=${{ secrets.STRIPE_SECRET_KEY }}
             STRIPE_WEBHOOK_SECRET=${{ secrets.STRIPE_WEBHOOK_SECRET }}
             STRIPE_PRICE_ID=${{ secrets.STRIPE_PRICE_ID }}
-            EVOLUTION_API_URL=${{ secrets.EVOLUTION_API_URL }}
-            EVOLUTION_API_KEY=${{ secrets.EVOLUTION_API_KEY }}
+            EVOLUTION_API_URL=http://evolution-go-p4mw-api-1:4000
+            EVOLUTION_API_KEY=${{ secrets.GLOBAL_API_KEY }}
             GLOBAL_API_KEY=${{ secrets.GLOBAL_API_KEY }}
             GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
             GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
