@@ -100,3 +100,23 @@ export async function createInstance(instanceName: string): Promise<void> {
   })
   // Ignora erros (pode já existir)
 }
+
+/**
+ * Deleta uma instância do Evolution API.
+ * Não afeta dados do Supabase (pacientes, agendamentos, histórico).
+ */
+export async function deleteInstance(instanceName: string): Promise<void> {
+  const url = `${EVOLUTION_API_URL}/instance/delete/${instanceName}`
+  await fetch(url, {
+    method: 'DELETE',
+    headers: { apikey: EVOLUTION_API_KEY },
+  })
+  // Ignora erros (pode não existir)
+}
+
+/**
+ * Gera um nome de instância único e estável por usuário.
+ */
+export function generateInstanceName(userId: string): string {
+  return `clinic-${userId.replace(/-/g, '').slice(0, 16)}`
+}

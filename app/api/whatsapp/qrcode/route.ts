@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { getInstanceQRCode, createInstance } from '@/lib/evolutionApi'
+import { getInstanceQRCode, createInstance, generateInstanceName } from '@/lib/evolutionApi'
 
 export async function GET() {
   const supabase = await createClient()
@@ -13,10 +13,17 @@ export async function GET() {
     .eq('user_id', user.id)
     .single()
 
-  const instanceId = settings?.whatsapp_instance_id as string | null
-  if (!instanceId) return NextResponse.json({ error: 'instance_not_configured' }, { status: 400 })
+  // Auto-gera nome da instância se ainda não configurado
+  let instanceId = settings?.whatsapp_instance_id as string | null
+  if (!instanceId) {
+    instanceId = generateInstanceName(user.id)
+    await supabase
+      .from('agent_settings')
+      .update({ whatsapp_instance_id: instanceId })
+      .eq('user_id', user.id)
+  }
 
-  // Tentar criar instância caso não exista (idempotente)
+  // Cria instância no Evolution Go (idempotente)
   await createInstance(instanceId)
 
   const result = await getInstanceQRCode(instanceId)

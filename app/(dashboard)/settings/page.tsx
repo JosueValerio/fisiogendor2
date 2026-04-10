@@ -24,6 +24,7 @@ function SettingsContent() {
   const [whatsappStatus, setWhatsappStatus] = useState<'open' | 'close' | 'connecting' | null>(null)
   const [qrCode, setQrCode] = useState<string | null>(null)
   const [loadingQR, setLoadingQR] = useState(false)
+  const [disconnecting, setDisconnecting] = useState(false)
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   useEffect(() => {
@@ -87,6 +88,15 @@ function SettingsContent() {
         if (r.ok) { const d = await r.json(); setQrCode(d.qrcode ?? null) }
       }
     }, 5000)
+  }
+
+  async function disconnectWhatsapp() {
+    setDisconnecting(true)
+    if (pollingRef.current) clearInterval(pollingRef.current)
+    await fetch('/api/whatsapp/disconnect', { method: 'POST' })
+    setWhatsappStatus('close')
+    setQrCode(null)
+    setDisconnecting(false)
   }
 
   async function saveProfile() {
@@ -237,31 +247,28 @@ function SettingsContent() {
           ) : null}
         </div>
 
-        <div>
-          <label className="mb-1 block text-xs text-white/50">Nome da Instância</label>
-          <input value={agentSettings.whatsapp_instance_id}
-            onChange={(e) => setAgentSettings((s) => ({ ...s, whatsapp_instance_id: e.target.value }))}
-            className="w-full rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-[#2F64E0]/50"
-            placeholder="fisiogendor-clinica" />
-          <p className="mt-1 text-xs text-white/30">Nome único para identificar sua instância WhatsApp</p>
-        </div>
+        <p className="text-xs text-white/40">
+          A instância WhatsApp é criada automaticamente ao conectar.
+        </p>
 
         <div className="flex gap-2">
-          <button onClick={saveWhatsapp} disabled={savingWhatsapp}
-            className="rounded-md border border-white/10 px-4 py-2 text-sm text-white/70 hover:bg-white/5 disabled:opacity-50">
-            {whatsappSaved ? 'Salvo!' : 'Salvar nome'}
-          </button>
-          {agentSettings.whatsapp_instance_id && whatsappStatus !== 'open' && (
+          {whatsappStatus !== 'open' && (
             <button onClick={connectWhatsapp} disabled={loadingQR}
               className="rounded-md bg-[#2F64E0] px-4 py-2 text-sm font-medium text-white hover:bg-[#1E4FC7] disabled:opacity-50">
               {loadingQR ? 'Carregando QR...' : 'Conectar WhatsApp'}
             </button>
           )}
-          {whatsappStatus === 'open' && agentSettings.whatsapp_instance_id && (
-            <button onClick={checkWhatsappStatus}
-              className="rounded-md border border-white/10 px-4 py-2 text-sm text-white/60 hover:bg-white/5">
-              <RefreshCw className="h-4 w-4" />
-            </button>
+          {whatsappStatus === 'open' && (
+            <div className="flex gap-2">
+              <button onClick={checkWhatsappStatus}
+                className="rounded-md border border-white/10 px-3 py-2 text-sm text-white/60 hover:bg-white/5">
+                <RefreshCw className="h-4 w-4" />
+              </button>
+              <button onClick={disconnectWhatsapp} disabled={disconnecting}
+                className="rounded-md border border-red-500/30 px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 disabled:opacity-50">
+                {disconnecting ? 'Desconectando...' : 'Desconectar'}
+              </button>
+            </div>
           )}
         </div>
 
