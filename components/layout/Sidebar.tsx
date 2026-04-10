@@ -51,7 +51,7 @@ export default function Sidebar() {
       </nav>
 
       <div className="p-6">
-        <button className="sunset-gradient w-full py-4 rounded-xl font-bold text-surface flex items-center justify-center gap-2 shadow-lg shadow-primary/10 hover:scale-[1.02] active:scale-95 transition-all">
+        <button className="sunset-gradient w-full py-4 rounded-md font-bold text-surface flex items-center justify-center gap-2 shadow-lg shadow-primary/10 hover:scale-[1.02] active:scale-95 transition-all">
           <PlusCircle size={18} />
           <span>Novo Agendamento</span>
         </button>
