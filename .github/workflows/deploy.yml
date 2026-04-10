@@ -50,8 +50,8 @@ jobs:
               app:
                 image: ghcr.io/josuevalerio/fisiogendor2:latest
                 restart: always
-                expose:
-                  - "3000"
+                networks:
+                  - traefik-proxy
                 env_file: .env
                 labels:
                   - "traefik.enable=true"
@@ -66,6 +66,11 @@ jobs:
                 restart: always
                 command: node worker-bundle.js
                 env_file: .env
+                networks:
+                  - traefik-proxy
+            networks:
+              traefik-proxy:
+                external: true
             COMPOSEFILE
 
             cat > /docker/fisiogendor-app/.env << ENVFILE
