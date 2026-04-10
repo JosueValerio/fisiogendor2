@@ -43,16 +43,24 @@ jobs:
           username: root
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
-            mkdir -p /root/fisiogendor
+            mkdir -p /docker/fisiogendor-app
 
-            cat > /root/fisiogendor/docker-compose.yml << 'COMPOSEFILE'
+            cat > /docker/fisiogendor-app/docker-compose.yml << 'COMPOSEFILE'
             services:
               app:
                 image: ghcr.io/josuevalerio/fisiogendor2:latest
                 restart: always
-                ports:
-                  - "3000:3000"
+                expose:
+                  - "3000"
                 env_file: .env
+                labels:
+                  - "traefik.enable=true"
+                  - "traefik.http.routers.fisiogendor.entrypoints=websecure"
+                  - "traefik.http.routers.fisiogendor.rule=Host(`fisiogendor.com`) || Host(`www.fisiogendor.com`)"
+                  - "traefik.http.routers.fisiogendor.tls.certresolver=letsencrypt"
+                  - "traefik.http.routers.fisiogendor.tls.domains[0].main=fisiogendor.com"
+                  - "traefik.http.routers.fisiogendor.tls.domains[0].sans=www.fisiogendor.com"
+                  - "traefik.http.services.fisiogendor.loadbalancer.server.port=3000"
               worker:
                 image: ghcr.io/josuevalerio/fisiogendor2:latest
                 restart: always
@@ -60,7 +68,7 @@ jobs:
                 env_file: .env
             COMPOSEFILE
 
-            cat > /root/fisiogendor/.env << ENVFILE
+            cat > /docker/fisiogendor-app/.env << ENVFILE
             SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
             OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
             STRIPE_SECRET_KEY=${{ secrets.STRIPE_SECRET_KEY }}
@@ -75,6 +83,6 @@ jobs:
             NEXT_PUBLIC_APP_URL=https://www.fisiogendor.com
             ENVFILE
 
-            cd /root/fisiogendor
+            cd /docker/fisiogendor-app
             docker pull ghcr.io/josuevalerio/fisiogendor2:latest
-            docker compose up -d --no-build --remove-orphans
+            docker compose -p fisiogendor-app up -d --no-build --remove-orphans

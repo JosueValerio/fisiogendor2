@@ -2,9 +2,17 @@ services:
   app:
     image: ghcr.io/josuevalerio/fisiogendor2:latest
     restart: always
-    ports:
-      - "3000:3000"
+    expose:
+      - "3000"
     env_file: .env
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.fisiogendor.entrypoints=websecure"
+      - "traefik.http.routers.fisiogendor.rule=Host(`fisiogendor.com`) || Host(`www.fisiogendor.com`)"
+      - "traefik.http.routers.fisiogendor.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.fisiogendor.tls.domains[0].main=fisiogendor.com"
+      - "traefik.http.routers.fisiogendor.tls.domains[0].sans=www.fisiogendor.com"
+      - "traefik.http.services.fisiogendor.loadbalancer.server.port=3000"
 
   worker:
     image: ghcr.io/josuevalerio/fisiogendor2:latest
