@@ -8,9 +8,7 @@ export async function GET(request: Request) {
   const code = searchParams.get('code')
   const state = searchParams.get('state')
 
-  const forwardedProto = request.headers.get('x-forwarded-proto') ?? 'https'
-  const forwardedHost = request.headers.get('x-forwarded-host') ?? request.headers.get('host') ?? 'www.fisiogendor.com'
-  const appUrl = `${forwardedProto}://${forwardedHost}`
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.fisiogendor.com'
 
   if (!code || !state) {
     return NextResponse.redirect(`${appUrl}/settings?calendar=error`)

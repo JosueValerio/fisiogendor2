@@ -23,11 +23,23 @@ export async function GET() {
       .eq('user_id', user.id)
   }
 
-  // Cria instância no Evolution Go (idempotente)
-  await createInstance(instanceId)
+  // Cria instância no Evolution Go (idempotente — 409 = já existe, ok)
+  const createResult = await createInstance(instanceId)
+  if (!createResult.ok) {
+    console.error(`[qrcode/route] createInstance failed for "${instanceId}":`, createResult.error)
+    return NextResponse.json(
+      { error: 'create_failed', detail: createResult.error },
+      { status: 500 }
+    )
+  }
 
   const result = await getInstanceQRCode(instanceId)
-  if (!result) return NextResponse.json({ error: 'qrcode_unavailable' }, { status: 404 })
+  if (!result) {
+    return NextResponse.json(
+      { error: 'qrcode_unavailable', detail: 'A instância foi criada mas o QR code não está disponível. Tente novamente.' },
+      { status: 404 }
+    )
+  }
 
-  return NextResponse.json(result)
+  return NextResponse.json({ qrcode: result.qrcode, instanceId })
 }

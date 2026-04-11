@@ -24,6 +24,7 @@ function SettingsContent() {
   const [whatsappStatus, setWhatsappStatus] = useState<'open' | 'close' | 'connecting' | null>(null)
   const [qrCode, setQrCode] = useState<string | null>(null)
   const [loadingQR, setLoadingQR] = useState(false)
+  const [qrError, setQrError] = useState<string | null>(null)
   const [disconnecting, setDisconnecting] = useState(false)
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
@@ -64,16 +65,21 @@ function SettingsContent() {
   async function connectWhatsapp() {
     setLoadingQR(true)
     setQrCode(null)
+    setQrError(null)
 
     const status = await checkWhatsappStatus()
     if (status === 'open') { setLoadingQR(false); return }
 
     const res = await fetch('/api/whatsapp/qrcode')
+    const data = await res.json()
     if (res.ok) {
-      const data = await res.json()
       setQrCode(data.qrcode ?? null)
+    } else {
+      setQrError(data.detail ?? data.error ?? 'Erro ao obter QR code. Verifique a conexão com a Evolution API.')
     }
     setLoadingQR(false)
+
+    if (!res.ok) return
 
     // Polling a cada 5s para detectar quando escanear
     if (pollingRef.current) clearInterval(pollingRef.current)
@@ -81,6 +87,7 @@ function SettingsContent() {
       const s = await checkWhatsappStatus()
       if (s === 'open') {
         setQrCode(null)
+        setQrError(null)
         if (pollingRef.current) clearInterval(pollingRef.current)
       } else {
         // Atualizar QR code a cada 30s (expira)
@@ -150,6 +157,11 @@ function SettingsContent() {
       {calendarParam === 'connected' && (
         <div className="flex items-center gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-300">
           <CheckCircle className="h-4 w-4" /> Google Calendar conectado com sucesso!
+        </div>
+      )}
+      {calendarParam === 'error' && (
+        <div className="flex items-center gap-2 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
+          <AlertTriangle className="h-4 w-4" /> Falha ao conectar o Google Calendar. Tente novamente.
         </div>
       )}
       {subscriptionParam === 'required' && (
@@ -271,6 +283,14 @@ function SettingsContent() {
             </div>
           )}
         </div>
+
+        {/* Erro QR */}
+        {qrError && (
+          <div className="flex items-start gap-2 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2.5 text-xs text-red-300">
+            <AlertTriangle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+            <span>{qrError}</span>
+          </div>
+        )}
 
         {/* QR Code */}
         {qrCode && whatsappStatus !== 'open' && (

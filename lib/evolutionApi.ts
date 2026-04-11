@@ -48,11 +48,16 @@ export async function getInstanceStatus(
     const res = await fetch(url, {
       headers: { apikey: EVOLUTION_API_KEY },
     })
-    if (!res.ok) return 'close'
+    if (!res.ok) {
+      const body = await res.text()
+      console.error(`[evolutionApi] getInstanceStatus error ${res.status} for "${instanceName}": ${body}`)
+      return 'close'
+    }
     const data = await res.json()
     // Evolution API v2: { instance: { state: 'open' | 'close' | 'connecting' } }
     return (data?.instance?.state ?? data?.state ?? 'close') as 'open' | 'close' | 'connecting'
-  } catch {
+  } catch (err) {
+    console.error(`[evolutionApi] getInstanceStatus exception for "${instanceName}":`, err)
     return 'close'
   }
 }
@@ -70,35 +75,60 @@ export async function getInstanceQRCode(
     const res = await fetch(url, {
       headers: { apikey: EVOLUTION_API_KEY },
     })
-    if (!res.ok) return null
+    if (!res.ok) {
+      const body = await res.text()
+      console.error(`[evolutionApi] getInstanceQRCode error ${res.status} for "${instanceName}": ${body}`)
+      return null
+    }
     const data = await res.json()
     // Evolution API v2: { code: '...', base64: 'data:image/png;base64,...' }
     const qrcode = data?.base64 ?? data?.code ?? null
-    if (!qrcode) return null
+    if (!qrcode) {
+      console.error(`[evolutionApi] getInstanceQRCode: response OK but no qrcode field for "${instanceName}":`, JSON.stringify(data))
+      return null
+    }
     return { qrcode }
-  } catch {
+  } catch (err) {
+    console.error(`[evolutionApi] getInstanceQRCode exception for "${instanceName}":`, err)
     return null
   }
 }
 
 /**
  * Cria uma nova instância no Evolution API se ela ainda não existir.
+ * Retorna { ok: true } em caso de sucesso ou { ok: false, error: string } em caso de falha.
  */
-export async function createInstance(instanceName: string): Promise<void> {
+export async function createInstance(instanceName: string): Promise<{ ok: boolean; error?: string }> {
   const url = `${EVOLUTION_API_URL}/instance/create`
-  await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      apikey: EVOLUTION_API_KEY,
-    },
-    body: JSON.stringify({
-      instanceName,
-      qrcode: true,
-      integration: 'WHATSAPP-BAILEYS',
-    }),
-  })
-  // Ignora erros (pode já existir)
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        apikey: EVOLUTION_API_KEY,
+      },
+      body: JSON.stringify({
+        instanceName,
+        qrcode: true,
+        integration: 'WHATSAPP-BAILEYS',
+      }),
+    })
+    if (!res.ok) {
+      const body = await res.text()
+      // 409 significa que a instância já existe — não é um erro real
+      if (res.status === 409) {
+        console.log(`[evolutionApi] createInstance: instance "${instanceName}" already exists (409), continuing`)
+        return { ok: true }
+      }
+      console.error(`[evolutionApi] createInstance error ${res.status} for "${instanceName}": ${body}`)
+      return { ok: false, error: `HTTP ${res.status}: ${body}` }
+    }
+    return { ok: true }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err)
+    console.error(`[evolutionApi] createInstance exception for "${instanceName}":`, err)
+    return { ok: false, error: message }
+  }
 }
 
 /**
