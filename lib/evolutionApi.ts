@@ -38,7 +38,7 @@ export function verifyWebhookSignature(rawBody: string, signature: string | null
 
 /**
  * Retorna o status de conexão de uma instância WhatsApp.
- * Possíveis valores: 'open' (conectado), 'close' (desconectado), 'connecting' (aguardando scan)
+ * Suporta múltiplos formatos de resposta da Evolution API e Evolution Go.
  */
 export async function getInstanceStatus(
   instanceName: string
@@ -50,22 +50,28 @@ export async function getInstanceStatus(
     })
     if (!res.ok) {
       const body = await res.text()
-      console.error(`[evolutionApi] getInstanceStatus error ${res.status} for "${instanceName}": ${body}`)
+      console.error(`[evolutionApi] getInstanceStatus ${res.status} "${instanceName}": ${body}`)
       return 'close'
     }
     const data = await res.json()
-    // Evolution API v2: { instance: { state: 'open' | 'close' | 'connecting' } }
-    return (data?.instance?.state ?? data?.state ?? 'close') as 'open' | 'close' | 'connecting'
+    // Suporta: { instance: { state } } | { state } | { status } | { connectionStatus }
+    const state =
+      data?.instance?.state ??
+      data?.instance?.connectionStatus ??
+      data?.state ??
+      data?.status ??
+      data?.connectionStatus ??
+      'close'
+    return state as 'open' | 'close' | 'connecting'
   } catch (err) {
-    console.error(`[evolutionApi] getInstanceStatus exception for "${instanceName}":`, err)
+    console.error(`[evolutionApi] getInstanceStatus exception "${instanceName}":`, err)
     return 'close'
   }
 }
 
 /**
  * Retorna o QR code para conectar uma instância WhatsApp.
- * Retorna { qrcode: string } com a string do QR code (base64 ou URI)
- * ou null se a instância não existir ou já estiver conectada.
+ * Suporta múltiplos formatos de resposta (Evolution API v1/v2 e Evolution Go).
  */
 export async function getInstanceQRCode(
   instanceName: string
@@ -77,26 +83,40 @@ export async function getInstanceQRCode(
     })
     if (!res.ok) {
       const body = await res.text()
-      console.error(`[evolutionApi] getInstanceQRCode error ${res.status} for "${instanceName}": ${body}`)
+      console.error(`[evolutionApi] getInstanceQRCode ${res.status} "${instanceName}": ${body}`)
       return null
     }
     const data = await res.json()
-    // Evolution API v2: { code: '...', base64: 'data:image/png;base64,...' }
-    const qrcode = data?.base64 ?? data?.code ?? null
+    console.log(`[evolutionApi] getInstanceQRCode response keys for "${instanceName}":`, Object.keys(data ?? {}))
+
+    // Suporta múltiplos formatos:
+    // Evolution API v2: { code, base64 }
+    // Evolution Go:     { qrcode: { code, base64 } } ou { qrcode: "data:..." }
+    // Outros:           { image, pairingCode }
+    const qrcode =
+      data?.base64 ??
+      data?.code ??
+      data?.qrcode?.base64 ??
+      data?.qrcode?.code ??
+      (typeof data?.qrcode === 'string' ? data.qrcode : null) ??
+      data?.image ??
+      null
+
     if (!qrcode) {
-      console.error(`[evolutionApi] getInstanceQRCode: response OK but no qrcode field for "${instanceName}":`, JSON.stringify(data))
+      console.error(`[evolutionApi] getInstanceQRCode: no qrcode in response for "${instanceName}":`, JSON.stringify(data))
       return null
     }
     return { qrcode }
   } catch (err) {
-    console.error(`[evolutionApi] getInstanceQRCode exception for "${instanceName}":`, err)
+    console.error(`[evolutionApi] getInstanceQRCode exception "${instanceName}":`, err)
     return null
   }
 }
 
 /**
- * Cria uma nova instância no Evolution API se ela ainda não existir.
- * Retorna { ok: true } em caso de sucesso ou { ok: false, error: string } em caso de falha.
+ * Cria uma nova instância no Evolution Go.
+ * Evolution Go usa "name" (não "instanceName") no body.
+ * Retorna { ok: true } em sucesso, { ok: false, error } em falha.
  */
 export async function createInstance(instanceName: string): Promise<{ ok: boolean; error?: string }> {
   const url = `${EVOLUTION_API_URL}/instance/create`
@@ -107,45 +127,52 @@ export async function createInstance(instanceName: string): Promise<{ ok: boolea
         'Content-Type': 'application/json',
         apikey: EVOLUTION_API_KEY,
       },
-      body: JSON.stringify({
-        instanceName,
-        qrcode: true,
-        integration: 'WHATSAPP-BAILEYS',
-      }),
+      // Evolution Go usa "name", não "instanceName"
+      body: JSON.stringify({ name: instanceName, qrcode: true }),
     })
     if (!res.ok) {
       const body = await res.text()
-      // 409 significa que a instância já existe — não é um erro real
+      // 409 = instância já existe — não é erro
       if (res.status === 409) {
-        console.log(`[evolutionApi] createInstance: instance "${instanceName}" already exists (409), continuing`)
+        console.log(`[evolutionApi] createInstance: "${instanceName}" already exists (409)`)
         return { ok: true }
       }
-      console.error(`[evolutionApi] createInstance error ${res.status} for "${instanceName}": ${body}`)
+      console.error(`[evolutionApi] createInstance ${res.status} "${instanceName}": ${body}`)
       return { ok: false, error: `HTTP ${res.status}: ${body}` }
     }
+    const data = await res.json().catch(() => ({}))
+    console.log(`[evolutionApi] createInstance success "${instanceName}":`, JSON.stringify(data))
     return { ok: true }
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)
-    console.error(`[evolutionApi] createInstance exception for "${instanceName}":`, err)
+    console.error(`[evolutionApi] createInstance exception "${instanceName}":`, err)
     return { ok: false, error: message }
   }
 }
 
 /**
- * Deleta uma instância do Evolution API.
+ * Deleta uma instância do Evolution Go.
  * Não afeta dados do Supabase (pacientes, agendamentos, histórico).
  */
 export async function deleteInstance(instanceName: string): Promise<void> {
   const url = `${EVOLUTION_API_URL}/instance/delete/${instanceName}`
-  await fetch(url, {
-    method: 'DELETE',
-    headers: { apikey: EVOLUTION_API_KEY },
-  })
-  // Ignora erros (pode não existir)
+  try {
+    const res = await fetch(url, {
+      method: 'DELETE',
+      headers: { apikey: EVOLUTION_API_KEY },
+    })
+    if (!res.ok) {
+      const body = await res.text()
+      console.error(`[evolutionApi] deleteInstance ${res.status} "${instanceName}": ${body}`)
+    }
+  } catch (err) {
+    console.error(`[evolutionApi] deleteInstance exception "${instanceName}":`, err)
+  }
 }
 
 /**
  * Gera um nome de instância único e estável por usuário.
+ * Usa apenas letras minúsculas e hífens — compatível com a maioria das APIs.
  */
 export function generateInstanceName(userId: string): string {
   return `clinic-${userId.replace(/-/g, '').slice(0, 16)}`
