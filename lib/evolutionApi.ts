@@ -127,8 +127,8 @@ export async function createInstance(instanceName: string): Promise<{ ok: boolea
         'Content-Type': 'application/json',
         apikey: EVOLUTION_API_KEY,
       },
-      // Evolution Go usa "name", não "instanceName"
-      body: JSON.stringify({ name: instanceName, qrcode: true }),
+      // Evolution Go usa "name" + "token" (não "instanceName")
+      body: JSON.stringify({ name: instanceName, token: EVOLUTION_API_KEY, qrcode: true }),
     })
     if (!res.ok) {
       const body = await res.text()
